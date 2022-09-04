@@ -461,3 +461,26 @@ FROM
     Products p ON pd.ProductID = p.ProductID
 WHERE
     pd.PaymentMode = 'Credit Card';
+  
+  -- Product Purchase Details By Customers Age Group --
+  
+    SELECT
+    products.ProductCategory,
+    COUNT(products.ProductCategory) AS total_purchase,
+    products.ProductDepartment,
+    CASE
+        WHEN Age BETWEEN 13 AND 19 THEN 'Age Group (13 To 19)'
+        WHEN Age BETWEEN 20 AND 28 THEN 'Age Group (20 To 28)'
+        WHEN Age BETWEEN 29 AND 40 THEN 'Age Group (29 To 40)'
+        WHEN Age BETWEEN 41 AND 55 THEN 'Age Group (41 To 55)'
+        ELSE 'Age Group (Greater Then 55)'
+    END AS Customer_Type
+FROM
+    Customers
+        INNER JOIN
+    purchase_details ON Customers.customerid = purchase_details.customerid
+        INNER JOIN
+    products ON purchase_details.productid = products.productid
+GROUP BY products.ProductCategory
+HAVING Customer_Type = 'Age Group (20 To 28)'
+ORDER BY COUNT(products.ProductCategory) DESC;
