@@ -58,6 +58,47 @@ CREATE TABLE IF NOT EXISTS Return_Details (
         REFERENCES Products (ProductID)
         ON DELETE CASCADE
 );
+-- Find who Purchases More Then Average Purchases --
+WITH Total_Quantity (CustomerID,Total_Qty) AS 
+	(SELECT CustomerID, SUM(Quantity) AS Total_Qty FROM Purchase_Details GROUP BY CustomerID),
+Avg_Quantity (Avg_Qty) AS
+	( SELECT ROUND(AVG(Total_Qty)) AS Avg_Qty FROM Total_Quantity)
+SELECT * FROM Total_Quantity tq
+JOIN Avg_Quantity aq
+ON tq.Total_Qty > aq.Avg_Qty;
+
+  -- Product Purchase Details By Customers Age Group --
+  
+    SELECT
+    products.ProductCategory,
+    COUNT(products.ProductCategory) AS total_purchase,
+    products.ProductDepartment,
+    CASE
+        WHEN Age BETWEEN 13 AND 19 THEN 'Age Group (13 To 19)'
+        WHEN Age BETWEEN 20 AND 28 THEN 'Age Group (20 To 28)'
+        WHEN Age BETWEEN 29 AND 40 THEN 'Age Group (29 To 40)'
+        WHEN Age BETWEEN 41 AND 55 THEN 'Age Group (41 To 55)'
+        ELSE 'Age Group (Greater Then 55)'
+    END AS Customer_Type
+FROM
+    Customers
+        INNER JOIN
+    purchase_details ON Customers.customerid = purchase_details.customerid
+        INNER JOIN
+    products ON purchase_details.productid = products.productid
+GROUP BY products.ProductCategory
+HAVING Customer_Type = 'Age Group (20 To 28)'
+ORDER BY COUNT(products.ProductCategory) DESC;
+
+-- Compare the customers present orders to previous orders
+SELECT pd.*, LAG(Quantity,1,0) OVER(PARTITION BY CustomerID ORDER BY CustomerID) AS Pre_Records,
+LEAD(Quantity,1,0) OVER (PARTITION BY CustomerID ORDER BY CustomerID) AS Next_Records
+FROM Purchase_Details pd;
+
+-- Average Orders Per Customers
+SELECT CustomerID,ROUND(AVG(Quantity)) AS Avg_Orders FROM Purchase_Details
+GROUP BY CustomerID;
+
 -- Calculate Total Revenue --
 SELECT 
     SUM(pd.Quantity * p.SellingCost + p.TaxAmount) AS Total_Revenue
@@ -461,35 +502,4 @@ FROM
     Products p ON pd.ProductID = p.ProductID
 WHERE
     pd.PaymentMode = 'Credit Card';
-  
-  -- Product Purchase Details By Customers Age Group --
-  
-    SELECT
-    products.ProductCategory,
-    COUNT(products.ProductCategory) AS total_purchase,
-    products.ProductDepartment,
-    CASE
-        WHEN Age BETWEEN 13 AND 19 THEN 'Age Group (13 To 19)'
-        WHEN Age BETWEEN 20 AND 28 THEN 'Age Group (20 To 28)'
-        WHEN Age BETWEEN 29 AND 40 THEN 'Age Group (29 To 40)'
-        WHEN Age BETWEEN 41 AND 55 THEN 'Age Group (41 To 55)'
-        ELSE 'Age Group (Greater Then 55)'
-    END AS Customer_Type
-FROM
-    Customers
-        INNER JOIN
-    purchase_details ON Customers.customerid = purchase_details.customerid
-        INNER JOIN
-    products ON purchase_details.productid = products.productid
-GROUP BY products.ProductCategory
-HAVING Customer_Type = 'Age Group (20 To 28)'
-ORDER BY COUNT(products.ProductCategory) DESC;
 
--- Compare the customers present orders to previous orders
-SELECT pd.*, LAG(Quantity,1,0) OVER(PARTITION BY CustomerID ORDER BY CustomerID) AS Pre_Records,
-LEAD(Quantity,1,0) OVER (PARTITION BY CustomerID ORDER BY CustomerID) AS Next_Records
-FROM Purchase_Details pd;
-
--- Average Orders Per Customers
-SELECT CustomerID,ROUND(AVG(Quantity)) AS Avg_Orders FROM Purchase_Details
-GROUP BY CustomerID;
