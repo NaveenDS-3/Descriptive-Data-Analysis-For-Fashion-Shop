@@ -484,3 +484,12 @@ FROM
 GROUP BY products.ProductCategory
 HAVING Customer_Type = 'Age Group (20 To 28)'
 ORDER BY COUNT(products.ProductCategory) DESC;
+
+-- Compare the customers present orders to previous orders
+SELECT pd.*, LAG(Quantity,1,0) OVER(PARTITION BY CustomerID ORDER BY CustomerID) AS Pre_Records,
+LEAD(Quantity,1,0) OVER (PARTITION BY CustomerID ORDER BY CustomerID) AS Next_Records
+FROM Purchase_Details pd;
+
+-- Average Orders Per Customers
+SELECT CustomerID,ROUND(AVG(Quantity)) AS Avg_Orders FROM Purchase_Details
+GROUP BY CustomerID;
